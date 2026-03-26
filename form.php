@@ -1,6 +1,6 @@
 <?php
-$nameErr = $emailErr = $genderErr = "";
-$name = $email = $website = $comment = $gender = "";
+$nameErr = $emailErr = $genderErr = $phoneErr = $websiteErr = $passwordErr = $confirmPassErr = $termsErr = "";
+$name = $email = $website = $comment = $gender = $phone = $password = $confirmPass = "";
 $submitted = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -12,6 +12,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $name = test_input($_POST["name"]);
         if (!preg_match("/^[a-zA-Z-' ]*$/", $name)) {
             $nameErr = "Only letters and white space allowed";
+        }
+    }
+
+
+    if (empty($_POST["phone"])) {
+        $phoneErr = "Number is required";
+    } else {
+        $phone = test_input($_POST["phone"]);
+        if (!preg_match("/^[0-9]{10,15}$/", $phone)) {
+            $phoneErr = "Invalid phone format (numbers only)";
         }
     }
 
@@ -27,7 +37,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!empty($_POST["website"])) {
         $website = test_input($_POST["website"]);
         if (!filter_var($website, FILTER_VALIDATE_URL)) {
-            $website = "";
+            $websiteErr = "Invalid URL format";
+        }
+    }
+
+    if (empty($_POST["password"])) {
+        $passwordErr = "Password is required";
+    } else {
+        $password = test_input($_POST["password"]);
+        if (strlen($password) < 8) {
+            $passwordErr = "Password must be at least 8 characters long.";
+        }
+    }
+
+    if (empty($_POST["confirmPass"])) {
+        $confirmPassErr = "Password Confirmation is required";
+    } else {
+        $confirmPass = $_POST["confirmPass"];
+        if ($confirmPass != $password && empty($passwordErr)) {
+            $confirmPassErr = "Password must match";
         }
     }
 
@@ -38,20 +66,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $gender = test_input($_POST["gender"]);
     }
+
+    if (empty($_POST["terms"])) {
+        $termsErr = "You must accept the terms and conditions";
+    }
 }
 
-function test_input($data) {
+function test_input($data)
+{
     $data = trim($data);
     $data = stripslashes($data);
     $data = htmlspecialchars($data);
     return $data;
 }
 
-$formValid = $submitted && empty($nameErr) && empty($emailErr) && empty($genderErr);
+$formValid = $submitted && empty($nameErr) && empty($emailErr) && empty($genderErr) && empty($phoneErr) && empty($websiteErr) && empty($passwordErr) && empty($confirmPassErr)&& empty($termsErr);
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,7 +152,8 @@ $formValid = $submitted && empty($nameErr) && empty($emailErr) && empty($genderE
             display: block;
         }
 
-        input[type="text"], 
+        input[type="text"],
+        input[type="password"],
         textarea {
             width: 100%;
             padding: 10px 12px;
@@ -128,7 +164,8 @@ $formValid = $submitted && empty($nameErr) && empty($emailErr) && empty($genderE
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
@@ -176,7 +213,8 @@ $formValid = $submitted && empty($nameErr) && empty($emailErr) && empty($genderE
         }
 
         /* Message Boxes */
-        .success-box, .output-box {
+        .success-box,
+        .output-box {
             margin-top: 24px;
             padding: 16px;
             border-radius: 8px;
@@ -210,68 +248,88 @@ $formValid = $submitted && empty($nameErr) && empty($emailErr) && empty($genderE
         }
     </style>
 </head>
+
 <body>
 
 <div class="form-container">
     <h2>Get in Touch</h2>
     <p class="required-note">Fields marked with <span style="color:var(--error-red)">*</span> are required.</p>
 
-    <?php if ($formValid): ?>
-        <div class="success-box">
-            Form submitted successfully!
-        </div>
-    <?php endif; ?>
+<?php if ($formValid): ?>
+    <div class="success-box">Form submitted successfully!</div>
+<?php endif; ?>
 
-    <form method="post" action="<?= htmlspecialchars($_SERVER["PHP_SELF"]) ?>">
+<form method="post" action="<?= htmlspecialchars($_SERVER["PHP_SELF"]) ?>">
 
-        <div class="field-row">
-            <label for="name">Name <span style="color:var(--error-red)">*</span></label>
-            <input type="text" id="name" name="name" placeholder="Jane Doe" value="<?= $name ?>">
-            <?php if($nameErr): ?><span class="error"><?= $nameErr ?></span><?php endif; ?>
-        </div>
-
-        <div class="field-row">
-            <label for="email">E-mail <span style="color:var(--error-red)">*</span></label>
-            <input type="text" id="email" name="email" placeholder="jane@example.com" value="<?= $email ?>">
-            <?php if($emailErr): ?><span class="error"><?= $emailErr ?></span><?php endif; ?>
-        </div>
-
-        <div class="field-row">
-            <label for="website">Website</label>
-            <input type="text" id="website" name="website" placeholder="https://..." value="<?= $website ?>">
-        </div>
-
-        <div class="field-row">
-            <label for="comment">Comment</label>
-            <textarea id="comment" name="comment" placeholder="Tell us more..."><?= $comment ?></textarea>
-        </div>
-
-        <div class="field-row">
-            <label>Gender <span style="color:var(--error-red)">*</span></label>
-            <div class="radio-group">
-                <label class="radio-item"><input type="radio" name="gender" value="Female" <?= ($gender == "Female") ? "checked" : "" ?>> Female</label>
-                <label class="radio-item"><input type="radio" name="gender" value="Male" <?= ($gender == "Male") ? "checked" : "" ?>> Male</label>
-                <label class="radio-item"><input type="radio" name="gender" value="Other" <?= ($gender == "Other") ? "checked" : "" ?>> Other</label>
-            </div>
-            <?php if($genderErr): ?><span class="error"><?= $genderErr ?></span><?php endif; ?>
-        </div>
-
-        <button type="submit">Send Message</button>
-    </form>
-
-    <div class="output-box">
-        <?php if ($submitted && $formValid): ?>
-            <h3>Your Input:</h3>
-            <p><strong>Name:</strong> <?= $name ?></p>
-            <p><strong>E-mail:</strong> <?= $email ?></p>
-            <?php if (!empty($website)): ?><p><strong>Website:</strong> <?= $website ?></p><?php endif; ?>
-            <p><strong>Gender:</strong> <?= $gender ?></p>
-        <?php elseif ($submitted && !$formValid): ?>
-            <p style="color:var(--error-red); margin:0;">Please fix the errors and try again.</p>
-        <?php else: ?>
-            <p style="margin:0; font-style: italic;">Results will appear here after submission.</p>
-        <?php endif; ?>
+    <div class="field-row">
+        <label>Name *</label>
+        <input type="text" name="name" value="<?= $name ?>">
+        <span class="error"><?= $nameErr ?></span>
     </div>
+
+    <div class="field-row">
+        <label>Email *</label>
+        <input type="text" name="email" value="<?= $email ?>">
+        <span class="error"><?= $emailErr ?></span>
+    </div>
+
+    <div class="field-row">
+        <label>Website</label>
+        <input type="text" name="website" value="<?= $website ?>">
+        <span class="error"><?= $websiteErr ?></span>
+    </div>
+
+    <div class="field-row">
+        <label>Phone *</label>
+        <input type="text" name="phone" value="<?= $phone ?>">
+        <span class="error"><?= $phoneErr ?></span>
+    </div>
+
+    <div class="field-row">
+        <label>Comment</label>
+        <textarea name="comment"><?= $comment ?></textarea>
+    </div>
+
+    <div class="field-row">
+        <label>Gender *</label>
+        <input type="radio" name="gender" value="Female" <?= ($gender == "Female") ? "checked" : "" ?>> Female
+        <input type="radio" name="gender" value="Male" <?= ($gender == "Male") ? "checked" : "" ?>> Male
+        <input type="radio" name="gender" value="Other" <?= ($gender == "Other") ? "checked" : "" ?>> Other
+        <span class="error"><?= $genderErr ?></span>
+    </div>
+
+    <div class="field-row">
+        <label>Password *</label>
+        <input type="password" name="password">
+        <span class="error"><?= $passwordErr ?></span>
+    </div>
+
+    <div class="field-row">
+        <label>Confirm Password *</label>
+        <input type="password" name="confirmPass">
+        <span class="error"><?= $confirmPassErr ?></span>
+    </div>
+
+    <input type="checkbox" name="terms" <?= isset($_POST['terms']) ? 'checked' : '' ?>> Terms and Conditions
+    <span class="error"><?= $termsErr ?></span>
+
+    <br><br>
+    <button type="submit">Send Message</button>
+</form>
+
+<div class="output-box">
+    <?php if ($submitted && $formValid): ?>
+        <h3>Your Input:</h3>
+        <p><strong>Name:</strong> <?= $name ?></p>
+        <p><strong>Email:</strong> <?= $email ?></p>
+        <p><strong>Phone:</strong> <?= $phone ?></p>
+        <p><strong>Gender:</strong> <?= $gender ?></p>
+    <?php elseif ($submitted): ?>
+        <p style="color:red;">Please fix errors.</p>
+    <?php endif; ?>
+</div>
+
+
 </div>
 
 </body>
